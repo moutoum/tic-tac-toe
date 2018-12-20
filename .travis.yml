@@ -2,29 +2,18 @@ sudo: required
 
 language: rust
 
-rust:
-  - stable
-  - beta
-  - nightly
-
 before_install:
   - sudo apt-get update
 
-cache:
-  directories:
-      - target/debug/deps
-      - target/debug/build
+cache: cargo
+
+before_cache: |
+    RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin
 
 addons:
   apt:
     packages:
-      - libcurl4-openssl-dev
-      - libelf-dev
-      - libdw-dev
+      - libssl-dev
 
 after_success: |
-    [ $TRAVIS_RUST_VERSION = stable ] &&
-    wget https://github.com/shaneutt/kcov/archive/master.tar.gz &&
-    tar xzf master.tar.gz && mkdir kcov-master/build && cd kcov-master/build && cmake .. && make && make install DESTDIR=../tmp && cd ../.. &&
-    ls target/debug &&
-    ./kcov-master/tmp/usr/local/bin/kcov –coveralls-id=$TRAVIS_JOB_ID –exclude-pattern=/.cargo target/kcov target/debug/tic-tac-toa-*
+    cargo tarpaulin --ciserver travis-ci --coveralls $TRAVIS_JOB_ID
