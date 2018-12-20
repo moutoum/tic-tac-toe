@@ -5,8 +5,6 @@ sudo: true
 before_install:
   - sudo apt-get update
 
-cache: cargo
-
 rust:
   - stable
   - nightly
@@ -19,6 +17,10 @@ before_cache: |
   if [[ "$TRAVIS_RUST_VERSION" == nightly ]]; then
     RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin
   fi
+
+cache:
+  directories:
+    - /home/travis/.cargo
 
 addons:
   apt:
