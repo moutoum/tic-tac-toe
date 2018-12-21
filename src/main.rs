@@ -7,18 +7,5 @@ mod game;
 use game::Game;
 
 fn main() {
-    println!("Tic tac toe");
-    let mut game = Game::new();
-
-    match game.play(0, 0) {
-        Ok(_) => {}
-        Err(_) => {}
-    }
-
-    match game.play(1, 0) {
-        Ok(_) => {}
-        Err(_) => {}
-    }
-
-    game.display();
+    println!("=== Tic tac toe ===");
 }

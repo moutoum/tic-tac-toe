@@ -5,6 +5,7 @@
 use game::Error::*;
 use game::Player::*;
 use game::Tile::*;
+use std::fmt;
 
 const BOARD_WIDTH: usize = 3;
 macro_rules! compute_index_with_coordinates {
@@ -52,12 +53,35 @@ impl Game {
         Ok(())
     }
 
-    pub fn display(&self) {
+    fn toggle_turn(&mut self) {
+        self.turn = match self.turn {
+            P1 => P2,
+            P2 => P1,
+        };
+    }
+
+    fn put_tile(&mut self, x: usize, y: usize, tile: Tile) -> Result<(), Error> {
+        let index = compute_index_with_coordinates!(x, y);
+
+        if x > BOARD_WIDTH || y > BOARD_WIDTH {
+            return Err(InvalidCoordinates);
+        } else if let Used(_) = self.board[index] {
+            return Err(TileAlreadyUsed);
+        }
+
+        self.board[index] = tile;
+
+        Ok(())
+    }
+}
+
+impl fmt::Display for Game {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for y in 0..BOARD_WIDTH {
             let mut line = String::new();
 
             if y > 0 {
-                println!("---+---+---");
+                f.write_str("---+---+---")?;
             }
 
             for x in 0..BOARD_WIDTH {
@@ -76,27 +100,8 @@ impl Game {
                 });
             }
 
-            println!("{}", line);
+            f.write_str(&line)?;
         }
-    }
-
-    fn toggle_turn(&mut self) {
-        self.turn = match self.turn {
-            P1 => P2,
-            P2 => P1,
-        };
-    }
-
-    fn put_tile(&mut self, x: usize, y: usize, tile: Tile) -> Result<(), Error> {
-        let index = compute_index_with_coordinates!(x, y);
-
-        if x > BOARD_WIDTH || y > BOARD_WIDTH {
-            return Err(InvalidCoordinates);
-        } else if let Used(_) = self.board[index] {
-            return Err(TileAlreadyUsed);
-        }
-
-        self.board[index] = tile;
 
         Ok(())
     }
