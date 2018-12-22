@@ -2,11 +2,12 @@
 // File Created: 15 Dec 2018 20:31
 // By Maxence Moutoussamy <maxence.moutoussamy1@gmail.com>
 
+mod player;
+
 use game::Error::*;
-use game::Player::*;
 use game::Tile::*;
 use std::fmt;
-use std::fmt::Write;
+use game::player::Player;
 
 const BOARD_WIDTH: usize = 3;
 macro_rules! compute_index_with_coordinates {
@@ -23,29 +24,6 @@ macro_rules! compute_index_with_coordinates {
 pub enum Tile {
     Empty,
     Used(Player),
-}
-
-/* Player */
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum Player {
-    P1,
-    P2,
-}
-
-impl fmt::Display for Player {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_char(char::from(self))
-    }
-}
-
-impl From<&Player> for char {
-    fn from(p: &Player) -> Self {
-        match p {
-            P1 => 'X',
-            P2 => 'O',
-        }
-    }
 }
 
 /* Winner */
@@ -69,15 +47,15 @@ pub enum Error {
 #[derive(Debug, PartialEq)]
 pub struct Game {
     board: [Tile; BOARD_WIDTH * BOARD_WIDTH],
-    turn: Player,
-    winner: Option<Winner>,
+    pub turn: Player,
+    pub winner: Option<Winner>,
 }
 
 impl Game {
     pub fn new() -> Game {
         Game {
             board: [Tile::Empty; BOARD_WIDTH * BOARD_WIDTH],
-            turn: P1,
+            turn: Player::P1,
             winner: None,
         }
     }
@@ -86,20 +64,21 @@ impl Game {
         let tile = Used(self.turn);
         self.put_tile(x, y, tile)?;
         self.toggle_turn();
+        self.winner = self.get_winner();
         Ok(())
     }
 
     fn toggle_turn(&mut self) {
         self.turn = match self.turn {
-            P1 => P2,
-            P2 => P1,
+            Player::P1 => Player::P2,
+            Player::P2 => Player::P1,
         };
     }
 
     fn put_tile(&mut self, x: usize, y: usize, tile: Tile) -> Result<(), Error> {
         let index = compute_index_with_coordinates!(x, y);
 
-        if x > BOARD_WIDTH || y > BOARD_WIDTH {
+        if x >= BOARD_WIDTH || y >= BOARD_WIDTH {
             return Err(InvalidCoordinates);
         } else if let Used(_) = self.board[index] {
             return Err(TileAlreadyUsed);
@@ -165,7 +144,7 @@ impl fmt::Display for Game {
         for y in 0..BOARD_WIDTH {
             let mut line = String::new();
             if y > 0 {
-                f.write_str("---+---+---")?;
+                f.write_str("---+---+---\n")?;
             }
             for x in 0..BOARD_WIDTH {
                 if x > 0 {
@@ -177,7 +156,7 @@ impl fmt::Display for Game {
                     Used(p) => char::from(&p),
                 });
             }
-            f.write_str(&line)?;
+            f.write_str(&format!("{}\n", &line))?;
         }
         Ok(())
     }
@@ -194,7 +173,7 @@ mod test {
             game,
             Game {
                 board: [Empty; BOARD_WIDTH * BOARD_WIDTH],
-                turn: P1,
+                turn: Player::P1,
                 winner: None,
             }
         );
@@ -203,11 +182,11 @@ mod test {
     #[test]
     fn test_game_toogle_turn() {
         let mut game = Game::new();
-        assert_eq!(game.turn, P1);
+        assert_eq!(game.turn, Player::P1);
         game.toggle_turn();
-        assert_eq!(game.turn, P2);
+        assert_eq!(game.turn, Player::P2);
         game.toggle_turn();
-        assert_eq!(game.turn, P1);
+        assert_eq!(game.turn, Player::P1);
     }
 
     #[test]
@@ -221,7 +200,7 @@ mod test {
         assert_eq!(
             game.board,
             [
-                Used(P1),
+                Used(Player::P1),
                 Empty,
                 Empty,
                 Empty,
@@ -258,77 +237,77 @@ mod test {
     get_winner_test!(no_winner_empty_map: [] => None);
 
     get_winner_test!(no_winner_3_random_player: [
-            0, 0 => Used(P1);
-            0, 1 => Used(P1);
-            1, 0 => Used(P1);
+            0, 0 => Used(Player::P1);
+            0, 1 => Used(Player::P1);
+            1, 0 => Used(Player::P1);
         ] => None
     );
 
     get_winner_test!(no_winner_filled_line_with_2_players: [
-            0, 0 => Used(P1);
-            1, 0 => Used(P1);
-            2, 0 => Used(P2);
+            0, 0 => Used(Player::P1);
+            1, 0 => Used(Player::P1);
+            2, 0 => Used(Player::P2);
         ] => None
     );
 
     get_winner_test!(winner_on_first_line: [
-            0, 0 => Used(P1); 
-            1, 0 => Used(P1); 
-            2, 0 => Used(P1);
-        ] => Some(Winner::Player(P1))
+            0, 0 => Used(Player::P1); 
+            1, 0 => Used(Player::P1); 
+            2, 0 => Used(Player::P1);
+        ] => Some(Winner::Player(Player::P1))
     );
 
     get_winner_test!(winner_on_middle_line: [
-            0, 1 => Used(P1); 
-            1, 1 => Used(P1); 
-            2, 1 => Used(P1);
-        ] => Some(Winner::Player(P1))
+            0, 1 => Used(Player::P1); 
+            1, 1 => Used(Player::P1); 
+            2, 1 => Used(Player::P1);
+        ] => Some(Winner::Player(Player::P1))
     );
 
     get_winner_test!(winner_on_last_line: [
-            0, 2 => Used(P1); 
-            1, 2 => Used(P1); 
-            2, 2 => Used(P1);
-        ] => Some(Winner::Player(P1))
+            0, 2 => Used(Player::P1); 
+            1, 2 => Used(Player::P1); 
+            2, 2 => Used(Player::P1);
+        ] => Some(Winner::Player(Player::P1))
     );
 
     get_winner_test!(winner_on_first_column: [
-            0, 0 => Used(P2); 
-            0, 1 => Used(P2); 
-            0, 2 => Used(P2);
-        ] => Some(Winner::Player(P2))
+            0, 0 => Used(Player::P2); 
+            0, 1 => Used(Player::P2); 
+            0, 2 => Used(Player::P2);
+        ] => Some(Winner::Player(Player::P2))
     );
 
     get_winner_test!(winner_on_middle_column: [
-            1, 0 => Used(P2); 
-            1, 1 => Used(P2); 
-            1, 2 => Used(P2);
-        ] => Some(Winner::Player(P2))
+            1, 0 => Used(Player::P2); 
+            1, 1 => Used(Player::P2); 
+            1, 2 => Used(Player::P2);
+        ] => Some(Winner::Player(Player::P2))
     );
 
     get_winner_test!(winner_on_last_column: [
-            2, 0 => Used(P2); 
-            2, 1 => Used(P2); 
-            2, 2 => Used(P2);
-        ] => Some(Winner::Player(P2))
+            2, 0 => Used(Player::P2); 
+            2, 1 => Used(Player::P2); 
+            2, 2 => Used(Player::P2);
+        ] => Some(Winner::Player(Player::P2))
     );
 
     get_winner_test!(winner_on_first_diagonal: [
-        0, 0 => Used(P1);
-        1, 1 => Used(P1);
-        2, 2 => Used(P1);
-    ] => Some(Winner::Player(P1)));
+        0, 0 => Used(Player::P1);
+        1, 1 => Used(Player::P1);
+        2, 2 => Used(Player::P1);
+    ] => Some(Winner::Player(Player::P1)));
 
     get_winner_test!(winner_on_last_diagonal: [
-        2, 0 => Used(P2);
-        1, 1 => Used(P2);
-        0, 2 => Used(P2);
-    ] => Some(Winner::Player(P2)));
+        2, 0 => Used(Player::P2);
+        1, 1 => Used(Player::P2);
+        0, 2 => Used(Player::P2);
+    ] => Some(Winner::Player(Player::P2)));
 
     get_winner_test!(equality: [
-        0, 0 => Used(P1); 1, 0 => Used(P1); 2, 0 => Used(P2);
-        0, 1 => Used(P2); 1, 1 => Used(P2); 2, 1 => Used(P1);
-        0, 2 => Used(P1); 1, 2 => Used(P2); 2, 2 => Used(P1);
+        0, 0 => Used(Player::P1); 1, 0 => Used(Player::P1); 2, 0 => Used(Player::P2);
+        0, 1 => Used(Player::P2); 1, 1 => Used(Player::P2); 2, 1 => Used(Player::P1);
+        0, 2 => Used(Player::P1); 1, 2 => Used(Player::P2); 2, 2 => Used(Player::P1);
     ] => Some(Winner::Nobody));
 
     #[test]
@@ -340,7 +319,7 @@ mod test {
             game,
             Game {
                 board: [
-                    Used(P1),
+                    Used(Player::P1),
                     Empty,
                     Empty,
                     Empty,
@@ -350,7 +329,7 @@ mod test {
                     Empty,
                     Empty
                 ],
-                turn: P2,
+                turn: Player::P2,
                 winner: None,
             }
         );
@@ -360,8 +339,8 @@ mod test {
             game,
             Game {
                 board: [
-                    Used(P1),
-                    Used(P2),
+                    Used(Player::P1),
+                    Used(Player::P2),
                     Empty,
                     Empty,
                     Empty,
@@ -370,7 +349,7 @@ mod test {
                     Empty,
                     Empty
                 ],
-                turn: P1,
+                turn: Player::P1,
                 winner: None,
             }
         );
@@ -381,8 +360,8 @@ mod test {
             game,
             Game {
                 board: [
-                    Used(P1),
-                    Used(P2),
+                    Used(Player::P1),
+                    Used(Player::P2),
                     Empty,
                     Empty,
                     Empty,
@@ -391,7 +370,7 @@ mod test {
                     Empty,
                     Empty
                 ],
-                turn: P1,
+                turn: Player::P1,
                 winner: None,
             }
         );
@@ -402,8 +381,8 @@ mod test {
             game,
             Game {
                 board: [
-                    Used(P1),
-                    Used(P2),
+                    Used(Player::P1),
+                    Used(Player::P2),
                     Empty,
                     Empty,
                     Empty,
@@ -412,7 +391,7 @@ mod test {
                     Empty,
                     Empty
                 ],
-                turn: P1,
+                turn: Player::P1,
                 winner: None,
             }
         );
