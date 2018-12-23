@@ -2,12 +2,10 @@
 // File Created: 15 Dec 2018 20:31
 // By Maxence Moutoussamy <maxence.moutoussamy1@gmail.com>
 
-mod player;
-
-use game::Error::*;
-use game::Tile::*;
-use std::fmt;
-use game::player::Player;
+use self::Error::*;
+use self::Tile::*;
+use std::fmt::{self, Write};
+use super::player::Player;
 
 const BOARD_WIDTH: usize = 3;
 macro_rules! compute_index_with_coordinates {
@@ -156,7 +154,10 @@ impl fmt::Display for Game {
                     Used(p) => char::from(&p),
                 });
             }
-            f.write_str(&format!("{}\n", &line))?;
+            f.write_str(&format!("{}", &line))?;
+            if y < BOARD_WIDTH-1 {
+                f.write_char('\n')?;
+            }
         }
         Ok(())
     }
@@ -395,5 +396,33 @@ mod test {
                 winner: None,
             }
         );
+    }
+
+    #[test]
+    fn test_display() {
+        let mut game = Game::new();
+
+        // empty
+        let board = vec![
+            "   |   |  ",
+            "---+---+---",
+            "   |   |  ",
+            "---+---+---",
+            "   |   |  "
+        ];
+        assert_eq!(format!("{}", game), board.join("\n"));
+
+        // with actions
+        game.put_tile(0, 0, Tile::Used(Player::P1)).expect("no error expected");
+        game.put_tile(1, 0, Tile::Used(Player::P1)).expect("no error expected");
+        game.put_tile(1, 1, Tile::Used(Player::P2)).expect("no error expected");
+        let board = vec![
+            " X | X |  ",
+            "---+---+---",
+            "   | O |  ",
+            "---+---+---",
+            "   |   |  "
+        ];
+        assert_eq!(format!("{}", game), board.join("\n"));
     }
 }
